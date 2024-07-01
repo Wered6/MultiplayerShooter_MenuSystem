@@ -7,6 +7,7 @@
 #include "Logging/LogMacros.h"
 #include "MenuSystemCharacter.generated.h"
 
+class IOnlineSession;
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
@@ -69,5 +70,9 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+public:
+	// Pointer to the online session interface
+	TSharedPtr<IOnlineSession, ESPMode::ThreadSafe> OnlineSessionInterface;
 };
 
