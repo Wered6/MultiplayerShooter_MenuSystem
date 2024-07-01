@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Interfaces/OnlineSessionDelegates.h"
 #include "Logging/LogMacros.h"
 #include "MenuSystemCharacter.generated.h"
 
@@ -28,7 +29,7 @@ class AMenuSystemCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
-	
+
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* DefaultMappingContext;
@@ -47,21 +48,18 @@ class AMenuSystemCharacter : public ACharacter
 
 public:
 	AMenuSystemCharacter();
-	
 
 protected:
-
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
-			
 
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	
+
 	// To add mapping context
 	virtual void BeginPlay();
 
@@ -72,7 +70,16 @@ public:
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
 public:
+	bool IsValidSessionInterface();
 	// Pointer to the online session interface
 	TSharedPtr<IOnlineSession, ESPMode::ThreadSafe> OnlineSessionInterface;
-};
 
+protected:
+	UFUNCTION(BlueprintCallable)
+	void CreateGameSession();
+
+	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
+
+private:
+	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
+};
