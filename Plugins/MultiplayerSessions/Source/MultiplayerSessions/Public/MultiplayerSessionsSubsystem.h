@@ -36,6 +36,8 @@ protected:
 	void OnStartSessionComplete(FName SessionName, bool bWasSuccessful);
 
 private:
+	bool IsValidSessionInterface();
+	
 	IOnlineSessionPtr SessionInterface;
 
 	/*
