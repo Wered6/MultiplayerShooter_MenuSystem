@@ -9,7 +9,7 @@ void UMenu::MenuSetup(int32 NumberOfPublicConnections, FString TypeOfMatch)
 {
 	NumPublicConnections = NumberOfPublicConnections;
 	MatchType = TypeOfMatch;
-	
+
 	AddToViewport();
 	SetVisibility(ESlateVisibility::Visible);
 	SetIsFocusable(true);
@@ -51,6 +51,16 @@ void UMenu::MenuSetup(int32 NumberOfPublicConnections, FString TypeOfMatch)
 #pragma endregion
 
 	MultiplayerSessionsSubsystem = GameInstance->GetSubsystem<UMultiplayerSessionsSubsystem>();
+
+#pragma region Nullchecks
+	if (!MultiplayerSessionsSubsystem)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s|MultiplayerSessionsSubsystem is nullptr"), *FString(__FUNCTION__))
+		return;
+	}
+#pragma endregion
+
+	MultiplayerSessionsSubsystem->MultiplayerOnCreateSessionComplete.AddDynamic(this, &UMenu::OnCreateSession);
 }
 
 bool UMenu::Initialize()
@@ -86,18 +96,47 @@ void UMenu::NativeDestruct()
 	Super::NativeDestruct();
 }
 
+void UMenu::OnCreateSession(bool bWasSuccessful)
+{
+	if (bWasSuccessful)
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				15.f,
+				FColor::Yellow,
+				FString(TEXT("Session created successfully!"))
+			);
+		}
+		UWorld* World{GetWorld()};
+
+#pragma region Nullchecks
+		if (!World)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s|World is nullptr"), *FString(__FUNCTION__))
+			return;
+		}
+#pragma endregion
+
+		World->ServerTravel("/Game/ThirdPerson/Maps/Lobby?listen");
+	}
+	else
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				15.f,
+				FColor::Red,
+				FString(TEXT("Failed to create session"))
+			);
+		}
+	}
+}
+
 void UMenu::HostButtonClicked()
 {
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			15.f,
-			FColor::Yellow,
-			FString(TEXT("Host Button Clicked"))
-		);
-	}
-
 #pragma region Nullchecks
 	if (!MultiplayerSessionsSubsystem)
 	{
@@ -107,18 +146,6 @@ void UMenu::HostButtonClicked()
 #pragma endregion
 
 	MultiplayerSessionsSubsystem->CreateSession(NumPublicConnections, MatchType);
-
-	UWorld* World{GetWorld()};
-
-#pragma region Nullchecks
-	if (!World)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s|World is nullptr"), *FString(__FUNCTION__))
-		return;
-	}
-#pragma endregion
-
-	World->ServerTravel("/Game/ThirdPerson/Maps/Lobby?listen");
 }
 
 void UMenu::JoinButtonClicked()

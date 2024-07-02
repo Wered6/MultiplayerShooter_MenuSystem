@@ -47,6 +47,9 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 NumPublicConnections, FS
 	if (!bWasCreateSessionSuccessful)
 	{
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegateHandle);
+
+		// Broadcast our own custom delegate
+		MultiplayerOnCreateSessionComplete.Broadcast(false);
 	}
 }
 
@@ -68,6 +71,17 @@ void UMultiplayerSessionsSubsystem::StartSession()
 
 void UMultiplayerSessionsSubsystem::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
 {
+#pragma region Nullchecks
+	if (!SessionInterface)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s|SessionInterface is nullptr"), *FString(__FUNCTION__))
+		return;
+	}
+#pragma endregion
+
+	SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegateHandle);
+	
+	MultiplayerOnCreateSessionComplete.Broadcast(bWasSuccessful);	
 }
 
 void UMultiplayerSessionsSubsystem::OnFindSessionsComplete(bool bWasSuccessful)
