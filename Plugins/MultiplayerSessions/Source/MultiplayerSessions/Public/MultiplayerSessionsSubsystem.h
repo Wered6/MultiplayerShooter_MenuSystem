@@ -39,7 +39,8 @@ private:
 	bool IsValidSessionInterface();
 	
 	IOnlineSessionPtr SessionInterface;
-
+	TSharedPtr<FOnlineSessionSettings> LastSessionSettings;
+	
 	/*
 	 * To add to the Online Session Interface delegate list.
 	 * We'll bind out MultiplayerSessionsSubsystem internal callbacks to these.

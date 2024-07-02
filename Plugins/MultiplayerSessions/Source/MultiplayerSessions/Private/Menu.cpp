@@ -2,12 +2,14 @@
 
 
 #include "Menu.h"
-
 #include "MultiplayerSessionsSubsystem.h"
 #include "Components/Button.h"
 
-void UMenu::MenuSetup()
+void UMenu::MenuSetup(int32 NumberOfPublicConnections, FString TypeOfMatch)
 {
+	NumPublicConnections = NumberOfPublicConnections;
+	MatchType = TypeOfMatch;
+	
 	AddToViewport();
 	SetVisibility(ESlateVisibility::Visible);
 	SetIsFocusable(true);
@@ -77,6 +79,13 @@ bool UMenu::Initialize()
 	return true;
 }
 
+void UMenu::NativeDestruct()
+{
+	MenuTearDown();
+
+	Super::NativeDestruct();
+}
+
 void UMenu::HostButtonClicked()
 {
 	if (GEngine)
@@ -97,7 +106,19 @@ void UMenu::HostButtonClicked()
 	}
 #pragma endregion
 
-	MultiplayerSessionsSubsystem->CreateSession(4, FString("FreeForAll"));
+	MultiplayerSessionsSubsystem->CreateSession(NumPublicConnections, MatchType);
+
+	UWorld* World{GetWorld()};
+
+#pragma region Nullchecks
+	if (!World)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s|World is nullptr"), *FString(__FUNCTION__))
+		return;
+	}
+#pragma endregion
+
+	World->ServerTravel("/Game/ThirdPerson/Maps/Lobby?listen");
 }
 
 void UMenu::JoinButtonClicked()
@@ -111,4 +132,33 @@ void UMenu::JoinButtonClicked()
 			FString(TEXT("Join Button Clicked"))
 		);
 	}
+}
+
+void UMenu::MenuTearDown()
+{
+	RemoveFromParent();
+
+	const UWorld* World{GetWorld()};
+
+#pragma region Nullchecks
+	if (!World)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s|World is nullptr"), *FString(__FUNCTION__))
+		return;
+	}
+#pragma endregion
+
+	APlayerController* PlayerController{World->GetFirstPlayerController()};
+
+#pragma region Nullchecks
+	if (!PlayerController)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s|PlayerController is nullptr"), *FString(__FUNCTION__))
+		return;
+	}
+#pragma endregion
+
+	const FInputModeGameOnly InputModeData;
+	PlayerController->SetInputMode(InputModeData);
+	PlayerController->SetShowMouseCursor(false);
 }
