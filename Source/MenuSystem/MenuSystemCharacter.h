@@ -8,6 +8,7 @@
 #include "Logging/LogMacros.h"
 #include "MenuSystemCharacter.generated.h"
 
+class FOnlineSessionSearch;
 class IOnlineSession;
 class USpringArmComponent;
 class UCameraComponent;
@@ -78,8 +79,14 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void CreateGameSession();
 
-	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
+	UFUNCTION(BlueprintCallable)
+	void JoinGameSession();
 
+	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
+	void OnFindSessionsComplete(bool bWasSuccessful);
+	
 private:
 	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
+	FOnFindSessionsCompleteDelegate FindSessionsCompleteDelegate;
+	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 };
