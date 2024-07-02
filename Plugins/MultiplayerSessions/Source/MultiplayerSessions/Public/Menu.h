@@ -6,6 +6,9 @@
 #include "Blueprint/UserWidget.h"
 #include "Menu.generated.h"
 
+class UMultiplayerSessionsSubsystem;
+class UButton;
+
 UCLASS()
 class MULTIPLAYERSESSIONS_API UMenu : public UUserWidget
 {
@@ -14,4 +17,21 @@ class MULTIPLAYERSESSIONS_API UMenu : public UUserWidget
 public:
 	UFUNCTION(BlueprintCallable)
 	void MenuSetup();
+
+protected:
+	virtual bool Initialize() override;
+
+private:
+	UFUNCTION()
+	void HostButtonClicked();
+	UFUNCTION()
+	void JoinButtonClicked();
+
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UButton> HostButton;
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UButton> JoinButton;
+
+	// Subsystem designed to handle all online session functionality
+	TObjectPtr<UMultiplayerSessionsSubsystem> MultiplayerSessionsSubsystem;
 };

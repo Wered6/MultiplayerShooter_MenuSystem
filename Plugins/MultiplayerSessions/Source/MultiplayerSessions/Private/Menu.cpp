@@ -3,6 +3,9 @@
 
 #include "Menu.h"
 
+#include "MultiplayerSessionsSubsystem.h"
+#include "Components/Button.h"
+
 void UMenu::MenuSetup()
 {
 	AddToViewport();
@@ -34,4 +37,78 @@ void UMenu::MenuSetup()
 	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	PlayerController->SetInputMode(InputModeData);
 	PlayerController->SetShowMouseCursor(true);
+
+	const UGameInstance* GameInstance{GetGameInstance()};
+
+#pragma region Nullchecks
+	if (!GameInstance)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s|GameInstance is nullptr"), *FString(__FUNCTION__))
+		return;
+	}
+#pragma endregion
+
+	MultiplayerSessionsSubsystem = GameInstance->GetSubsystem<UMultiplayerSessionsSubsystem>();
+}
+
+bool UMenu::Initialize()
+{
+	if (!Super::Initialize())
+	{
+		return false;
+	}
+
+#pragma region Nullchecks
+	if (!HostButton)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s|HostButton is nullptr"), *FString(__FUNCTION__))
+		return false;
+	}
+	if (!JoinButton)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s|JoinButton is nullptr"), *FString(__FUNCTION__))
+		return false;
+	}
+#pragma endregion
+
+	HostButton->OnClicked.AddDynamic(this, &UMenu::HostButtonClicked);
+	JoinButton->OnClicked.AddDynamic(this, &UMenu::JoinButtonClicked);
+
+	return true;
+}
+
+void UMenu::HostButtonClicked()
+{
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			15.f,
+			FColor::Yellow,
+			FString(TEXT("Host Button Clicked"))
+		);
+	}
+
+#pragma region Nullchecks
+	if (!MultiplayerSessionsSubsystem)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s|MultiplayerSessionsSubsystem is nullptr"), *FString(__FUNCTION__))
+		return;
+	}
+#pragma endregion
+
+	MultiplayerSessionsSubsystem->CreateSession(4, FString("FreeForAll"));
+}
+
+void UMenu::JoinButtonClicked()
+{
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			15.f,
+			FColor::Yellow,
+			FString(TEXT("Join Button Clicked"))
+		);
+	}
 }
