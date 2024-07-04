@@ -3,6 +3,7 @@
 
 #include "Menu.h"
 #include "MultiplayerSessionsSubsystem.h"
+#include "OnlineSessionSettings.h"
 #include "Components/Button.h"
 
 void UMenu::MenuSetup(int32 NumberOfPublicConnections, FString TypeOfMatch)
@@ -141,10 +142,57 @@ void UMenu::OnCreateSession(bool bWasSuccessful)
 
 void UMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful)
 {
+#pragma region Nullchecks
+	if (!MultiplayerSessionsSubsystem)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s|MultiplayerSessionsSubsystem is nullptr"), *FString(__FUNCTION__))
+		return;
+	}
+#pragma endregion
+
+	for (FOnlineSessionSearchResult Result : SessionResults)
+	{
+		FString SettingsValue;
+		Result.Session.SessionSettings.Get(FName("MatchType"), SettingsValue);
+		if (SettingsValue == MatchType)
+		{
+			MultiplayerSessionsSubsystem->JoinSession(Result);
+			return;
+		}
+	}
 }
 
 void UMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
 {
+	const IOnlineSubsystem* Subsystem{IOnlineSubsystem::Get()};
+
+#pragma region Nullchecks
+	if (!Subsystem)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s|Subsystem is nullptr"), *FString(__FUNCTION__))
+		return;
+	}
+#pragma endregion
+
+	const IOnlineSessionPtr SessionInterface{Subsystem->GetSessionInterface()};
+
+	if (SessionInterface.IsValid())
+	{
+		FString Address;
+		SessionInterface->GetResolvedConnectString(NAME_GameSession, Address);
+
+		APlayerController* PlayerController{GetGameInstance()->GetFirstLocalPlayerController()};
+
+#pragma region Nullchecks
+		if (!PlayerController)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s|PlayerController is nullptr"), *FString(__FUNCTION__))
+			return;
+		}
+#pragma endregion
+
+		PlayerController->ClientTravel(Address, TRAVEL_Absolute);
+	}
 }
 
 void UMenu::OnDestroySession(bool bWasSuccessful)
@@ -170,15 +218,15 @@ void UMenu::HostButtonClicked()
 
 void UMenu::JoinButtonClicked()
 {
-	if (GEngine)
+#pragma region Nullchecks
+	if (!MultiplayerSessionsSubsystem)
 	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			15.f,
-			FColor::Yellow,
-			FString(TEXT("Join Button Clicked"))
-		);
+		UE_LOG(LogTemp, Warning, TEXT("%s|MultiplayerSessionsSubsystem is nullptr"), *FString(__FUNCTION__))
+		return;
 	}
+#pragma endregion
+
+	MultiplayerSessionsSubsystem->FindSessions(10000);
 }
 
 void UMenu::MenuTearDown()
