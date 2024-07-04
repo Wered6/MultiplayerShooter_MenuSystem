@@ -6,8 +6,9 @@
 #include "OnlineSessionSettings.h"
 #include "Components/Button.h"
 
-void UMenu::MenuSetup(int32 NumberOfPublicConnections, FString TypeOfMatch)
+void UMenu::MenuSetup(int32 NumberOfPublicConnections, FString TypeOfMatch, FString LobbyPath)
 {
+	PathToLobby = FString::Printf(TEXT("%s?listen"), *LobbyPath);
 	NumPublicConnections = NumberOfPublicConnections;
 	MatchType = TypeOfMatch;
 
@@ -124,7 +125,7 @@ void UMenu::OnCreateSession(bool bWasSuccessful)
 		}
 #pragma endregion
 
-		World->ServerTravel("/Game/ThirdPerson/Maps/Lobby?listen");
+		World->ServerTravel(PathToLobby);
 	}
 	else
 	{
@@ -137,6 +138,7 @@ void UMenu::OnCreateSession(bool bWasSuccessful)
 				FString(TEXT("Failed to create session"))
 			);
 		}
+		HostButton->SetIsEnabled(true);
 	}
 }
 
@@ -159,6 +161,11 @@ void UMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResu
 			MultiplayerSessionsSubsystem->JoinSession(Result);
 			return;
 		}
+	}
+
+	if (!bWasSuccessful || SessionResults.IsEmpty())
+	{
+		JoinButton->SetIsEnabled(true);
 	}
 }
 
@@ -193,6 +200,11 @@ void UMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
 
 		PlayerController->ClientTravel(Address, TRAVEL_Absolute);
 	}
+
+	if (Result != EOnJoinSessionCompleteResult::Success)
+	{
+		JoinButton->SetIsEnabled(true);
+	}
 }
 
 void UMenu::OnDestroySession(bool bWasSuccessful)
@@ -213,6 +225,8 @@ void UMenu::HostButtonClicked()
 	}
 #pragma endregion
 
+	HostButton->SetIsEnabled(false);
+
 	MultiplayerSessionsSubsystem->CreateSession(NumPublicConnections, MatchType);
 }
 
@@ -225,6 +239,8 @@ void UMenu::JoinButtonClicked()
 		return;
 	}
 #pragma endregion
+
+	JoinButton->SetIsEnabled(false);
 
 	MultiplayerSessionsSubsystem->FindSessions(10000);
 }
